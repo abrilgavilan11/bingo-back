@@ -7,15 +7,16 @@ const getPlaylist = async (req, res) => {
     return res.status(400).json({ error: 'Playlist URL is required' });
   }
 
-  const match = url.match(/playlist\/([a-zA-Z0-9]{22})/);
-  const playlistId = match ? match[1] : null;
+  const match = url.match(/(playlist|album)\/([a-zA-Z0-9]{22})/);
+  const type = match ? match[1] : null;
+  const playlistId = match ? match[2] : null;
 
   if (!playlistId) {
-    return res.status(400).json({ error: 'La URL de la playlist no es válida o está incompleta. Debe contener un ID de 22 caracteres.' });
+    return res.status(400).json({ error: 'La URL no es válida. Debe ser un link de una Playlist o un Álbum de Spotify.' });
   }
 
   try {
-    const tracks = await spotifyService.getPlaylistTracks(playlistId);
+    const tracks = await spotifyService.getPlaylistTracks(playlistId, type);
     
     res.json({
       success: true,

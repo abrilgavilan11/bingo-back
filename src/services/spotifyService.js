@@ -1,9 +1,9 @@
 const fetch = global.fetch;
 const spotify = require('spotify-url-info')(fetch);
 
-const getPlaylistTracks = async (playlistId) => {
+const getPlaylistTracks = async (playlistId, type = 'playlist') => {
   try {
-    const url = `https://open.spotify.com/playlist/${playlistId}`;
+    const url = `https://open.spotify.com/${type}/${playlistId}`;
     
     const scrapedTracks = await spotify.getTracks(url);
 
