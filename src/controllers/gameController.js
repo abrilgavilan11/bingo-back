@@ -9,7 +9,13 @@ const createGameSession = (req, res) => {
   }
 
   const gameId = generateId();
-  games.set(gameId, { cards, gridSize, createdAt: Date.now() });
+  games.set(gameId, { 
+    cards, 
+    gridSize, 
+    createdAt: Date.now(),
+    playedTracks: [],
+    winners: []
+  });
 
   for (const [key, value] of games.entries()) {
     if (Date.now() - value.createdAt > 24 * 60 * 60 * 1000) {
@@ -36,7 +42,36 @@ const getCard = (req, res) => {
   res.json({ success: true, card, gridSize: game.gridSize });
 };
 
+const getGameState = (gameId) => {
+  const game = games.get(gameId);
+  if (!game) return null;
+  return {
+    playedTracks: game.playedTracks,
+    winners: game.winners
+  };
+};
+
+const addPlayedTrack = (gameId, track) => {
+  const game = games.get(gameId);
+  if (game && !game.playedTracks.some(t => t.id === track.id)) {
+    game.playedTracks.unshift(track);
+  }
+};
+
+const addWinner = (gameId, winnerData) => {
+  const game = games.get(gameId);
+  if (game) {
+    const exists = game.winners.some(w => w.cardId === winnerData.cardId && w.type === winnerData.type);
+    if (!exists) {
+      game.winners.push(winnerData);
+    }
+  }
+};
+
 module.exports = {
   createGameSession,
-  getCard
+  getCard,
+  getGameState,
+  addPlayedTrack,
+  addWinner
 };
