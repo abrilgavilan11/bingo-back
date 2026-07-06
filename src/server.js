@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const spotifyRoutes = require('./routes/spotifyRoutes');
@@ -19,6 +20,14 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3001;
 
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('Conectado a MongoDB Atlas'))
+    .catch(err => console.error('Error conectando a MongoDB:', err));
+} else {
+  console.warn('ADVERTENCIA: No se encontró MONGODB_URI en .env. El backend no se conectará a la base de datos.');
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -32,30 +41,30 @@ app.use('/api/game', gameRoutes);
 io.on('connection', (socket) => {
   console.log('Usuario conectado:', socket.id);
 
-  socket.on('join-room', (gameId) => {
+  socket.on('join-room', async (gameId) => {
     socket.join(gameId);
     console.log(`Socket ${socket.id} unido a sala ${gameId}`);
     
-    const state = gameController.getGameState(gameId);
+    const state = await gameController.getGameState(gameId);
     if (state) {
       socket.emit('sync-state', state);
     }
   });
 
-  socket.on('draw-song', ({ gameId, track }) => {
-    gameController.addPlayedTrack(gameId, track);
+  socket.on('draw-song', async ({ gameId, track }) => {
+    await gameController.addPlayedTrack(gameId, track);
     io.to(gameId).emit('next-song', track);
   });
 
-  socket.on('line-bingo', ({ gameId, cardId, playerName, lineType }) => {
+  socket.on('line-bingo', async ({ gameId, cardId, playerName, lineType }) => {
     const winner = { type: 'LÍNEA', cardId, playerName, lineType };
-    gameController.addWinner(gameId, winner);
+    await gameController.addWinner(gameId, winner);
     io.to(gameId).emit('winner-alert', winner);
   });
 
-  socket.on('full-bingo', ({ gameId, cardId, playerName }) => {
+  socket.on('full-bingo', async ({ gameId, cardId, playerName }) => {
     const winner = { type: 'BINGO', cardId, playerName };
-    gameController.addWinner(gameId, winner);
+    await gameController.addWinner(gameId, winner);
     io.to(gameId).emit('winner-alert', winner);
   });
 
