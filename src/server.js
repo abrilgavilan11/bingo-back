@@ -58,14 +58,18 @@ io.on('connection', (socket) => {
 
   socket.on('line-bingo', async ({ gameId, cardId, playerName, lineType }) => {
     const winner = { type: 'LÍNEA', cardId, playerName, lineType };
-    await gameController.addWinner(gameId, winner);
-    io.to(gameId).emit('winner-alert', winner);
+    const success = await gameController.addWinner(gameId, winner);
+    if (success) {
+      io.to(gameId).emit('winner-alert', winner);
+    }
   });
 
   socket.on('full-bingo', async ({ gameId, cardId, playerName }) => {
     const winner = { type: 'BINGO', cardId, playerName };
-    await gameController.addWinner(gameId, winner);
-    io.to(gameId).emit('winner-alert', winner);
+    const success = await gameController.addWinner(gameId, winner);
+    if (success) {
+      io.to(gameId).emit('winner-alert', winner);
+    }
   });
 
   socket.on('disconnect', () => {
