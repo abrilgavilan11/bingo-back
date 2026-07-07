@@ -53,7 +53,9 @@ const getGameState = async (gameId) => {
     if (!game) return null;
     return {
       playedTracks: game.playedTracks,
-      winners: game.winners
+      winners: game.winners,
+      gridSize: game.gridSize,
+      cardsCount: game.cards.length
     };
   } catch (error) {
     console.error('Error getting game state:', error);

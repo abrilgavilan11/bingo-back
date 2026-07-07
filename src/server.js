@@ -77,8 +77,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('restart-game', async (gameId) => {
+  socket.on('restart-game', async (data) => {
+    const gameId = typeof data === 'string' ? data : data.gameId;
+    const newCards = typeof data === 'object' ? data.newCards : null;
+
     await gameController.clearWinners(gameId);
+    
+    const game = await Game.findOne({ gameId });
+    if (game) {
+      game.playedTracks = [];
+      if (newCards && newCards.length > 0) {
+        game.cards = newCards;
+      }
+      await game.save();
+    }
     io.to(gameId).emit('restarted-game');
   });
 
