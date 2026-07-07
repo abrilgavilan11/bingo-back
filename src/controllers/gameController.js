@@ -77,19 +77,38 @@ const addWinner = async (gameId, winnerData) => {
   try {
     const game = await Game.findOne({ gameId });
     if (game) {
-      // Verificamos si ya existe algún ganador de este tipo en la sala
-      const typeAlreadyWon = game.winners.some(w => w.type === winnerData.type);
+      const winnersOfType = game.winners.filter(w => w.type === winnerData.type);
       
-      if (!typeAlreadyWon) {
+      const alreadyWonThisType = winnersOfType.some(w => w.cardId === winnerData.cardId);
+      if (alreadyWonThisType) return false;
+
+      let canWin = false;
+      if (winnerData.type === 'LÍNEA' && winnersOfType.length < 2) {
+        canWin = true;
+      } else if (winnerData.type === 'BINGO' && winnersOfType.length < 1) {
+        canWin = true;
+      }
+
+      if (canWin) {
         game.winners.push(winnerData);
         await game.save();
-        return true; // Se agregó exitosamente como el primer ganador
+        return true; 
       }
-      return false; // Ya existía un ganador de este tipo
+      return false; 
     }
     return false;
   } catch (error) {
     console.error('Error adding winner:', error);
+    return false;
+  }
+};
+
+const clearWinners = async (gameId) => {
+  try {
+    await Game.updateOne({ gameId }, { $set: { winners: [] } });
+    return true;
+  } catch (error) {
+    console.error('Error clearing winners:', error);
     return false;
   }
 };
@@ -99,5 +118,6 @@ module.exports = {
   getCard,
   getGameState,
   addPlayedTrack,
-  addWinner
+  addWinner,
+  clearWinners
 };

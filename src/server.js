@@ -72,6 +72,11 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('restart-game', async (gameId) => {
+    await gameController.clearWinners(gameId);
+    io.to(gameId).emit('restarted-game');
+  });
+
   socket.on('disconnect', () => {
     console.log('Usuario desconectado:', socket.id);
   });
