@@ -54,6 +54,11 @@ io.on('connection', (socket) => {
   socket.on('draw-song', async ({ gameId, track }) => {
     await gameController.addPlayedTrack(gameId, track);
     io.to(gameId).emit('next-song', track);
+
+    const newWinners = await gameController.checkAutoWinners(gameId);
+    newWinners.forEach(winner => {
+      io.to(gameId).emit('winner-alert', winner);
+    });
   });
 
   socket.on('line-bingo', async ({ gameId, cardId, playerName, lineType }) => {
