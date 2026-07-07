@@ -76,26 +76,34 @@ const addPlayedTrack = async (gameId, track) => {
 const addWinner = async (gameId, winnerData) => {
   try {
     const game = await Game.findOne({ gameId });
-    if (game) {
-      const winnersOfType = game.winners.filter(w => w.type === winnerData.type);
-      
-      const alreadyWonThisType = winnersOfType.some(w => w.cardId === winnerData.cardId);
-      if (alreadyWonThisType) return false;
-
-      let canWin = false;
-      if (winnerData.type === 'LÍNEA' && winnersOfType.length < 2) {
-        canWin = true;
-      } else if (winnerData.type === 'BINGO' && winnersOfType.length < 1) {
-        canWin = true;
-      }
-
-      if (canWin) {
-        game.winners.push(winnerData);
-        await game.save();
-        return true; 
-      }
-      return false; 
+    if (!game) {
+      console.log('Game not found:', gameId);
+      return false;
     }
+
+    const winnersOfType = game.winners.filter(w => w.type === winnerData.type);
+    
+    const alreadyWonThisType = winnersOfType.some(w => w.cardId === winnerData.cardId);
+    if (alreadyWonThisType) {
+      console.log('Already won this type:', winnerData);
+      return false;
+    }
+
+    let canWin = false;
+    if (winnerData.type === 'LÍNEA' && winnersOfType.length < 2) {
+      canWin = true;
+    } else if (winnerData.type === 'BINGO' && winnersOfType.length < 1) {
+      canWin = true;
+    }
+
+    if (canWin) {
+      game.winners.push(winnerData);
+      await game.save();
+      console.log('Winner added successfully:', winnerData);
+      return true; 
+    }
+    
+    console.log('Cannot win, limits reached for type:', winnerData.type);
     return false;
   } catch (error) {
     console.error('Error adding winner:', error);
