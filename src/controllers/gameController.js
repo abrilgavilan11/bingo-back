@@ -65,11 +65,10 @@ const getGameState = async (gameId) => {
 
 const addPlayedTrack = async (gameId, track) => {
   try {
-    const game = await Game.findOne({ gameId });
-    if (game && !game.playedTracks.some(t => t.id === track.id)) {
-      game.playedTracks.unshift(track);
-      await game.save();
-    }
+    await Game.updateOne(
+      { gameId, 'playedTracks.id': { $ne: track.id } },
+      { $push: { playedTracks: { $each: [track], $position: 0 } } }
+    );
   } catch (error) {
     console.error('Error adding played track:', error);
   }
@@ -213,7 +212,10 @@ const checkAutoWinners = async (gameId) => {
     }
     
     if (newWinners.length > 0) {
-      await game.save();
+      await Game.updateOne(
+        { gameId },
+        { $push: { winners: { $each: newWinners } } }
+      );
     }
     
     return newWinners;

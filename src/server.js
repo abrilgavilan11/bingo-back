@@ -8,6 +8,7 @@ require('dotenv').config();
 const spotifyRoutes = require('./routes/spotifyRoutes');
 const gameRoutes = require('./routes/gameRoutes');
 const gameController = require('./controllers/gameController');
+const Game = require('./models/Game');
 
 const app = express();
 const server = http.createServer(app);
