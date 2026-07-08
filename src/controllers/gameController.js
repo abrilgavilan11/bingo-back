@@ -84,8 +84,14 @@ const addWinner = async (gameId, winnerData) => {
 
     const winnersOfType = game.winners.filter(w => w.type === winnerData.type);
     
-    const alreadyWonThisType = winnersOfType.some(w => w.cardId === winnerData.cardId);
-    if (alreadyWonThisType) {
+    const existingWinnerIndex = game.winners.findIndex(w => w.type === winnerData.type && w.cardId === winnerData.cardId);
+    if (existingWinnerIndex !== -1) {
+      if (game.winners[existingWinnerIndex].playerName === 'Desconocido' && winnerData.playerName !== 'Desconocido') {
+        game.winners[existingWinnerIndex].playerName = winnerData.playerName;
+        await game.save();
+        console.log('Updated Desconocido to real player name:', winnerData.playerName);
+        return true; 
+      }
       console.log('Already won this type:', winnerData);
       return false;
     }
