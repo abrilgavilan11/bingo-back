@@ -53,10 +53,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('draw-song', async ({ gameId, track }) => {
+    io.to(gameId).emit('debug-log', `[Server] draw-song event received: ${track.title}`);
     await gameController.addPlayedTrack(gameId, track);
     io.to(gameId).emit('next-song', track);
 
-    const newWinners = await gameController.checkAutoWinners(gameId);
+    const newWinners = await gameController.checkAutoWinners(gameId, (msg) => {
+      console.log(msg);
+      io.to(gameId).emit('debug-log', msg);
+    });
+    
+    io.to(gameId).emit('debug-log', `[Server] checkAutoWinners completed. Found ${newWinners.length} new winners.`);
+    
     newWinners.forEach(winner => {
       io.to(gameId).emit('winner-alert', winner);
     });

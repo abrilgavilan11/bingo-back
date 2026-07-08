@@ -154,20 +154,33 @@ const getLineType = (index, size) => {
   }
 };
 
-const checkAutoWinners = async (gameId) => {
+const checkAutoWinners = async (gameId, logFunc = console.log) => {
   try {
+    logFunc(`[checkAutoWinners] Empezando revisión para gameId: ${gameId}`);
     const game = await Game.findOne({ gameId });
-    if (!game) return [];
+    if (!game) {
+      logFunc(`[checkAutoWinners] ERROR: No se encontró el juego ${gameId}`);
+      return [];
+    }
     
+    logFunc(`[checkAutoWinners] Cartones en el juego: ${game.cards.length}`);
     const playedTrackIds = new Set(game.playedTracks.map(t => t.id));
+    logFunc(`[checkAutoWinners] Canciones jugadas: ${playedTrackIds.size}`);
+    
     const newWinners = [];
 
     const lineaWinners = game.winners.filter(w => w.type === 'LÍNEA');
     const bingoWinners = game.winners.filter(w => w.type === 'BINGO');
     
+    logFunc(`[checkAutoWinners] Ganadores actuales -> Líneas: ${lineaWinners.length}, Bingos: ${bingoWinners.length}`);
+    
     for (const card of game.cards) {
       const size = card.tracks.length;
       const lines = WINNING_LINES[size];
+      if (!lines) {
+         logFunc(`[checkAutoWinners] ERROR: WINNING_LINES no definido para tamaño ${size}`);
+         continue;
+      }
       
       const markedIndices = new Set();
       card.tracks.forEach((track, idx) => {
@@ -187,6 +200,7 @@ const checkAutoWinners = async (gameId) => {
           }
         }
         if (isFull) {
+          logFunc(`[checkAutoWinners] BINGO detectado para cartón ${card.id}`);
           const winnerData = { type: 'BINGO', cardId: card.id, playerName: 'Desconocido', lineType: null };
           game.winners.push(winnerData);
           newWinners.push(winnerData);
@@ -210,6 +224,7 @@ const checkAutoWinners = async (gameId) => {
         
         if (wonLine) {
           const lineType = getLineType(wonLineIndex, size);
+          logFunc(`[checkAutoWinners] LÍNEA detectada para cartón ${card.id} (Tipo: ${lineType})`);
           const winnerData = { type: 'LÍNEA', cardId: card.id, playerName: 'Desconocido', lineType };
           game.winners.push(winnerData);
           newWinners.push(winnerData);
@@ -218,14 +233,19 @@ const checkAutoWinners = async (gameId) => {
     }
     
     if (newWinners.length > 0) {
+      logFunc(`[checkAutoWinners] Guardando ${newWinners.length} nuevos ganadores en DB...`);
       await Game.updateOne(
         { gameId },
         { $push: { winners: { $each: newWinners } } }
       );
+      logFunc(`[checkAutoWinners] Guardado exitoso.`);
+    } else {
+      logFunc(`[checkAutoWinners] Ningún ganador nuevo en esta ronda.`);
     }
     
     return newWinners;
   } catch (error) {
+    logFunc(`[checkAutoWinners] CATCH ERROR: ${error.message}`);
     console.error('Error auto checking winners:', error);
     return [];
   }
